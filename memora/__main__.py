@@ -172,8 +172,13 @@ def main(argv=None):
 
     args = p.parse_args(argv)
     db = store.connect()
-    {"auth": cmd_auth, "status": cmd_status, "backup": cmd_backup,
-     "sweep": cmd_sweep, "review": cmd_review}[args.cmd](args, db)
+    try:
+        {"auth": cmd_auth, "status": cmd_status, "backup": cmd_backup,
+         "sweep": cmd_sweep, "review": cmd_review}[args.cmd](args, db)
+    except ModuleNotFoundError as e:
+        # the Google client libraries are imported lazily so the planner and its tests
+        # run with nothing installed; a real command needs them.
+        sys.exit(f"missing dependency {e.name} - run: pip install -r requirements.txt")
 
 
 if __name__ == "__main__":

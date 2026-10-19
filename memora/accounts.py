@@ -40,9 +40,9 @@ def token_path(email):
 def add(profile="backup", photos=False, port=0):
     """Run the consent flow, then name the account from Drive itself (about.get returns
     the email, so no extra identity scope is needed)."""
-    from google_auth_oauthlib.flow import InstalledAppFlow
     if not CLIENT_SECRET.exists():
         raise SystemExit(f"missing {CLIENT_SECRET} - see README phase 0")
+    from google_auth_oauthlib.flow import InstalledAppFlow
     flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_SECRET), scopes(profile, photos))
     creds = flow.run_local_server(port=port, prompt="consent")
     about = _drive(creds).about().get(
