@@ -7,7 +7,7 @@ from pathlib import Path
 
 GB = 1 << 30
 DEFAULT_RESERVE = 2 * GB          # stop filling a 15 GB account at 13 GB
-HOME = Path(os.environ.get("SPREAD_HOME", Path.home() / ".spread"))
+HOME = Path(os.environ.get("MEMORA_HOME", Path.home() / ".memora"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS accounts(

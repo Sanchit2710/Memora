@@ -1,12 +1,12 @@
 # secrets and per-user state never belong in this repo.
-# They live in ~/.spread/ by design; these rules only catch a stray copy.
+# They live in ~/.memora/ by design; these rules only catch a stray copy.
 client_secret*.json
 *credentials*.json
 token*.json
 tokens/
 *.db
 cache/
-.spread/
+.memora/
 
 __pycache__/
 *.pyc

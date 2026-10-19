@@ -59,7 +59,7 @@ def load(email):
     from google.oauth2.credentials import Credentials
     p = token_path(email)
     if not p.exists():
-        raise SystemExit(f"no token for {email} - run: spread auth add")
+        raise SystemExit(f"no token for {email} - run: memora auth add")
     creds = Credentials.from_authorized_user_file(str(p))
     if not creds.valid:
         creds.refresh(Request())

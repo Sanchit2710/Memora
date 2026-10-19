@@ -8,7 +8,7 @@ from pathlib import Path
 
 from . import accounts, store
 
-FOLDER = "spread-backup"
+FOLDER = "memora-backup"
 RESUMABLE_MIN = 5 << 20
 MEDIA_EXT = {".jpg", ".jpeg", ".png", ".heic", ".heif", ".gif", ".webp", ".tif", ".tiff",
              ".dng", ".cr2", ".nef", ".arw", ".raf", ".orf", ".rw2",
@@ -129,7 +129,7 @@ def mirror_index(svc, db_path):
     """Keep a copy of the index in the account's hidden appDataFolder, so the index is
     not the single point of failure."""
     from googleapiclient.http import MediaFileUpload
-    name = "spread-index.db"
+    name = "memora-index.db"
     hits = accounts.retry(lambda: svc.files().list(
         spaces="appDataFolder", q=f"name='{name}'", fields="files(id)").execute())["files"]
     media = MediaFileUpload(str(db_path), resumable=False)

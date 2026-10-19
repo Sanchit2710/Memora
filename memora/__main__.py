@@ -1,11 +1,11 @@
-"""spread - back one photo library up across several Google accounts, once each.
+"""memora - back one photo library up across several Google accounts, once each.
 
 Commands:
-  spread auth add [--profile sweep] [--photos]   authorise an account
-  spread status                                  quota + headroom per account
-  spread backup DIR [--dry-run] [--also-photos]  place files, switching at the reserve
-  spread sweep                                   index remote files, find duplicates
-  spread review                                  localhost page to decide each duplicate
+  memora auth add [--profile sweep] [--photos]   authorise an account
+  memora status                                  quota + headroom per account
+  memora backup DIR [--dry-run] [--also-photos]  place files, switching at the reserve
+  memora sweep                                   index remote files, find duplicates
+  memora review                                  localhost page to decide each duplicate
 
 There is deliberately no delete flag here. Deletions happen only through `review`.
 """
@@ -38,7 +38,7 @@ def cmd_auth(args, db):
 def cmd_status(args, db):
     accts = store.accounts(db, enabled_only=False)
     if not accts:
-        sys.exit("no accounts yet - run: spread auth add")
+        sys.exit("no accounts yet - run: memora auth add")
     if not args.cached:
         accounts.refresh_quotas(db)
         accts = store.accounts(db, enabled_only=False)
@@ -55,7 +55,7 @@ def cmd_status(args, db):
 def cmd_backup(args, db):
     accts = store.accounts(db)
     if not accts:
-        sys.exit("no enabled accounts - run: spread auth add")
+        sys.exit("no enabled accounts - run: memora auth add")
     accounts.refresh_quotas(db)
     accts = store.accounts(db)
     backends = ("drive", "photos") if args.also_photos else ("drive",)
@@ -124,7 +124,7 @@ def cmd_sweep(args, db):
         print(f"  {human(g['size'])}  " +
               " | ".join(f"{c['account']}/{c['name']}" for c in g["copies"]))
     if gs:
-        print("\nnothing deleted. decide each group: spread review")
+        print("\nnothing deleted. decide each group: memora review")
 
 
 def cmd_review(args, db):
@@ -133,7 +133,7 @@ def cmd_review(args, db):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="spread", description=__doc__,
+    p = argparse.ArgumentParser(prog="memora", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = p.add_subparsers(dest="cmd", required=True)
 

@@ -1,4 +1,4 @@
-"""Assert-based checks. No framework, no deps: run `python3 test_spread.py`.
+"""Assert-based checks. No framework, no deps: run `python3 test_memora.py`.
 
 Covers the logic that, if it broke, would either re-upload everything (the bug this tool
 exists to fix) or delete a photo nobody agreed to delete.
@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from spread import dedup, store, sync  # noqa: E402
+from memora import dedup, store, sync  # noqa: E402
 
 GB = store.GB
 
@@ -126,7 +126,7 @@ def test_review_survives_hostile_filenames():
     import json
     import re
 
-    from spread import dedup, review
+    from memora import dedup, review
     db = store.connect(":memory:")
     nasty = "beach day's `x` \"q\" </script>.jpg"
     store.record_copy(db, "md5a", 4182331, "a@x", "drive", "id1", nasty, "http://d/1", "2020")
@@ -151,7 +151,8 @@ def test_review_survives_hostile_filenames():
 
 def test_no_delete_path_outside_review():
     """The CLI must have no way to trash a file; only a review POST may."""
-    src = Path(__file__).parent / "spread"
+    src = Path(__file__).parent / "memora"
+    assert src.is_dir(), f"{src} missing - this check would pass vacuously"
     hits = subprocess.run(["grep", "-rn", r"trashed.*True\|files()\.delete",
                            str(src)], capture_output=True, text=True).stdout
     files = {line.split(":")[0].split("/")[-1] for line in hits.splitlines() if line}
@@ -179,7 +180,7 @@ def test_repo_carries_no_credentials():
         hit = bad.search(text)
         assert not hit, f"credential-shaped string in {f.name}: {hit.group()[:40]}"
     # and the paths the code reads secrets from must sit outside the repo
-    from spread import accounts
+    from memora import accounts
     assert root not in accounts.CLIENT_SECRET.parents, "client secret path is inside the repo"
     assert root not in accounts.TOKENS.parents, "token store is inside the repo"
 

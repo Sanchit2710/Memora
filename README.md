@@ -1,16 +1,16 @@
-# spread
+# Memora
 
 Back one photo library up across several Google accounts — each file uploaded **once**, each
 account filled only to a reserve so mail keeps arriving, and cross-account duplicates removed
 only after you look at them and decide.
 
 ```
-python3 -m spread auth add   # authorise an account (repeat per account)
-python3 -m spread status      # quota, reserve, placeable bytes per account
-python3 -m spread backup DIR --dry-run
-python3 -m spread backup DIR  # uploads, switching accounts at the reserve
-python3 -m spread sweep       # index what is up there, find duplicates
-python3 -m spread review      # decide each duplicate in the browser
+python3 -m memora auth add    # authorise an account (repeat per account)
+python3 -m memora status      # quota, reserve, placeable bytes per account
+python3 -m memora backup DIR --dry-run
+python3 -m memora backup DIR  # uploads, switching accounts at the reserve
+python3 -m memora sweep       # index what is up there, find duplicates
+python3 -m memora review      # decide each duplicate in the browser
 ```
 
 There is no delete flag. Deletions happen only through `review`, one group at a time, and go
@@ -28,25 +28,24 @@ to that account's Drive trash (30-day recovery).
    one-time "Google hasn't verified this app" screen — *Advanced → go to … (unsafe)*. It is
    your own app and your own data.
 5. **Credentials → Create credentials → OAuth client ID → Desktop app** → download the JSON.
-6. Save it as `~/.spread/client_secret.json`.
+6. Save it as `~/.memora/client_secret.json`.
 7. `pip install -r requirements.txt`
 
-Then, per account: `python3 -m spread auth add` (add `--photos` for Photos, `--profile sweep`
+Then, per account: `python3 -m memora auth add` (add `--photos` for Photos, `--profile sweep`
 to also see files this app did not upload — see *Scopes* below).
 
 ## If you cloned this
 
 It works without any credential from whoever wrote it, and it has to: this repo contains no
-client id, no client secret, no token, no account name. A guard test (`test_repo_carries_no_
-credentials`) fails the build if one ever lands there.
+client id, no client secret, no token, no account name. A guard test (``test_repo_carries_no_credentials``) fails the build if one ever lands there.
 
-Everything per-user lives in `~/.spread/`, outside the checkout:
+Everything per-user lives in `~/.memora/`, outside the checkout:
 
 ```
-~/.spread/client_secret.json   your OAuth client, downloaded from your own GCP project
-~/.spread/tokens/<email>.json  one refresh token per account, chmod 600
-~/.spread/index.db             your content index
-~/.spread/cache/               images fetched for the review page
+~/.memora/client_secret.json   your OAuth client, downloaded from your own GCP project
+~/.memora/tokens/<email>.json  one refresh token per account, chmod 600
+~/.memora/index.db             your content index
+~/.memora/cache/               images fetched for the review page
 ```
 
 So the one thing you cannot skip is **phase 0 below: make your own Google Cloud project.**
@@ -60,7 +59,7 @@ pre-configured:
 - Sharing tokens would mean sharing access to the photos themselves.
 
 `rclone` asks the same of you for the same reasons. If you skip it, `auth add` stops with
-`missing ~/.spread/client_secret.json - see README phase 0` rather than failing obscurely.
+`missing ~/.memora/client_secret.json - see README phase 0` rather than failing obscurely.
 
 ## What it costs
 
@@ -90,7 +89,7 @@ here: a sweep of ~1,000 files is about 10 list calls.
   re-encoded or resized copy of the same shot is a different file and will not match.
 - A run killed mid-upload abandons that one resumable session; Drive creates no file, so the
   next run re-uploads it. Correct, just not byte-efficient.
-- Files go into one `spread-backup` folder per account, original relative path preserved in
+- Files go into one `memora-backup` folder per account, original relative path preserved in
   the file's `appProperties.relpath`.
 - Spreading a library over several free accounts is not a supported Google configuration. The
   accounts stay independent, and losing one loses that shard. After every run the index is
@@ -99,6 +98,6 @@ here: a sweep of ~1,000 files is about 10 list calls.
 
 ## Tests
 
-`python3 test_spread.py` — 8 assert-based checks, no deps needed. They cover the two things
+`python3 test_memora.py` — 10 assert-based checks, no deps needed. They cover the two things
 that actually matter: the reserve is never crossed and known content is never re-uploaded, and
 nothing can delete a file except a decision posted from the review page.

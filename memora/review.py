@@ -34,7 +34,7 @@ def fetch_bytes(email, remote_id):
 
 
 PAGE = r"""<!doctype html><meta charset=utf-8>
-<title>spread review</title>
+<title>memora review</title>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1a1a18;--dim:#6b6b66;--line:#e2e2dd;
@@ -135,7 +135,7 @@ def render(groups):
     if not groups:
         page = PAGE.replace("__BODY__",
                             "<div class=empty>No duplicate groups pending. Run "
-                            "<code>spread sweep</code> to look again.</div>")
+                            "<code>memora sweep</code> to look again.</div>")
         return (page.replace("__COUNT__", "0").replace("__BYTES__", "0 B")
                 .replace("__DATA__", "[]"))
 
