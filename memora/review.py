@@ -72,7 +72,9 @@ button{font:inherit;font-size:13px;padding:7px 11px;border-radius:6px;cursor:poi
 button.danger{border-color:var(--warn);color:var(--warn)}
 button:hover{filter:brightness(1.08)}
 .groupacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.done{opacity:.45}
+.done{opacity:.4}
+.done .pair{display:none}
+.done .why{margin:0}
 .tag{font-size:12px;color:var(--ok)}
 #flip{position:fixed;inset:0;background:#000;display:none;z-index:50}
 #flip img{width:100%;height:100%;object-fit:contain}
@@ -82,11 +84,13 @@ button:hover{filter:brightness(1.08)}
 kbd{border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px}
 </style>
 <header><h1>Duplicate review</h1>
-<div class=sub>__COUNT__ group(s) · __BYTES__ reclaimable · nothing is deleted until you
+<div class=sub><b id=left>__COUNT__</b> left of __COUNT__ group(s) · __BYTES__ reclaimable · nothing is deleted until you
 choose · deletions go to that account's Drive trash (30-day recovery) ·
 click an image to flip full-screen, <kbd>&larr;</kbd><kbd>&rarr;</kbd> to compare,
 <kbd>esc</kbd> to close</div></header>
-<main>__BODY__</main>
+<main><div id=alldone class=empty style=display:none>
+<h2>Queue empty.</h2><p>Every duplicate group has been decided. Run
+<code>python3 -m memora sweep</code> to look for more.</p></div>__BODY__</main>
 <div id=flip><div class=bar><span id=flipname></span><span>esc to close</span></div>
 <img id=flipimg></div>
 <script>
@@ -119,6 +123,20 @@ async function post(g,action,keepId){
   el.classList.add('done');
   el.querySelector('.groupacts').innerHTML='<span class=tag>'+j.message+'</span>';
   el.querySelectorAll('.acts').forEach(a=>a.remove());
+  advance(el);
+}
+function advance(from){
+  const pending=[...document.querySelectorAll('.group:not(.done)')];
+  document.getElementById('left').textContent=pending.length;
+  if(!pending.length){
+    document.getElementById('alldone').style.display='block';
+    document.getElementById('alldone').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  // the next group below the one just decided, else the first still pending
+  const next=pending.find(g=>g.compareDocumentPosition(from)
+                            &Node.DOCUMENT_POSITION_PRECEDING)||pending[0];
+  next.scrollIntoView({behavior:'smooth',block:'start'});
 }
 </script>
 """

@@ -64,7 +64,7 @@ def cmd_backup(args, db):
 
     root = Path(args.dir).expanduser()
     svc, parent, creds = {}, {}, {}
-    placed = skipped = blocked = 0
+    placed = skipped = blocked = failed = 0
     bytes_up = bytes_skipped = 0
 
     for action, path, md5, size, email, detail in sync.plan(db, root, accts, backends,
@@ -90,22 +90,29 @@ def cmd_backup(args, db):
             creds[email] = accounts.load(email)
             svc[email] = accounts._drive(creds[email])
             parent[email] = sync.folder_id(svc[email])
-        if "drive" in detail:
-            f = sync.upload_drive(svc[email], parent[email], path, rel, size)
-            if f.get("md5Checksum") and f["md5Checksum"] != md5:
-                print(f"WARNING {rel}: Drive reports a different md5, not recording")
-            else:
+        try:
+            if "drive" in detail:
+                f = sync.upload_drive(svc[email], parent[email], path, rel, size,
+                                      expect_md5=md5)
                 store.record_copy(db, md5, size, email, "drive", f["id"], f.get("name"),
                                   f.get("webViewLink"), f.get("createdTime"))
-        if "photos" in detail:
-            pid, purl = sync.push_photos(creds[email], path)
-            store.record_copy(db, md5, size, email, "photos", pid, path.name, purl)
+            if "photos" in detail:
+                pid, purl = sync.push_photos(creds[email], path)
+                store.record_copy(db, md5, size, email, "photos", pid, path.name, purl)
+        except Exception as e:
+            # one unreadable file or one API refusal must not end a 1000-file run
+            print(f"FAILED  {rel}: {type(e).__name__}: {e}")
+            failed += 1
+            continue
         placed += 1
         bytes_up += size
         print(f"up     {rel}  {human(size)}  -> {email}")
 
     print(f"\n{placed} placed ({human(bytes_up)}), {skipped} already backed up "
-          f"({human(bytes_skipped)} not re-uploaded), {blocked} blocked")
+          f"({human(bytes_skipped)} not re-uploaded), {blocked} blocked"
+          + (f", {failed} failed" if failed else ""))
+    if failed:
+        print("re-run to retry the failed files; nothing was recorded for them")
     if not args.dry_run and placed:
         accounts.refresh_quotas(db)
         for email in svc:

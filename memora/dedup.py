@@ -39,6 +39,8 @@ def groups(db, include_decided=False):
     rows = db.execute(
         "SELECT md5, size FROM copies WHERE backend='drive' "
         "GROUP BY md5, size HAVING COUNT(DISTINCT account || remote_id) > 1")
+    free = {a["email"]: a["quota_limit"] - a["quota_used"]
+            for a in store.accounts(db, enabled_only=False)}
     out = []
     for md5, size in [(r["md5"], r["size"]) for r in rows]:
         copies = store.copies_of(db, md5, size, backend="drive")
@@ -47,7 +49,6 @@ def groups(db, include_decided=False):
         key = store.group_key(c["remote_id"] for c in copies)
         if not include_decided and key in decided:
             continue
-        free = {a["email"]: a["quota_limit"] - a["quota_used"] for a in store.accounts(db)}
         # suggest keeping the oldest copy; tie-break toward the fuller account, so
         # cleaning up also rebalances quota toward the emptier one
         copies.sort(key=lambda c: (c["created_time"] or "", free.get(c["account"], 0)))

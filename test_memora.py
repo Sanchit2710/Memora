@@ -156,7 +156,15 @@ def test_no_delete_path_outside_review():
     hits = subprocess.run(["grep", "-rn", r"trashed.*True\|files()\.delete",
                            str(src)], capture_output=True, text=True).stdout
     files = {line.split(":")[0].split("/")[-1] for line in hits.splitlines() if line}
-    assert files <= {"dedup.py"}, f"delete call outside dedup.py: {hits}"
+    # dedup.py deletes user files, and only when review.py posts a human decision.
+    # sync.py may delete exactly one thing: an upload it just made whose bytes came back
+    # with the wrong hash. Nothing else may delete at all.
+    assert files <= {"dedup.py", "sync.py"}, f"delete call in {files - {'dedup.py', 'sync.py'}}"
+    if "sync.py" in files:
+        verify = (src / "sync.py").read_text()
+        body = verify[verify.index("def _verify("):]
+        assert "trashed" in body.split("\ndef ")[0], \
+            "sync.py deletes somewhere other than its own upload-verification path"
     main = (src / "__main__.py").read_text()
     assert "trash" not in main and "apply_decision" not in main, \
         "__main__ can delete without the review gate"

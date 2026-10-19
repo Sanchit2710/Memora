@@ -81,7 +81,13 @@ def folder_id(svc):
         fields="id").execute())["id"]
 
 
-def upload_drive(svc, parent, path, relpath, size, on_progress=None):
+def upload_drive(svc, parent, path, relpath, size, on_progress=None, expect_md5=None):
+    """Upload one file. If Drive hashes the stored bytes differently from what we hashed
+    locally, the upload is discarded and this raises: an unrecorded file left behind would
+    be re-uploaded on every future run, duplicating forever. The only file this ever
+    deletes is the one it created moments earlier in this same call - user data is only
+    ever deleted through the review page.
+    """
     from googleapiclient.http import MediaFileUpload
     media = MediaFileUpload(str(path), resumable=size >= RESUMABLE_MIN,
                             chunksize=8 << 20)
@@ -91,7 +97,7 @@ def upload_drive(svc, parent, path, relpath, size, on_progress=None):
         media_body=media,
         fields="id,name,size,md5Checksum,createdTime,webViewLink")
     if not media.resumable():
-        return accounts.retry(lambda: req.execute())
+        return _verify(svc, accounts.retry(lambda: req.execute()), expect_md5, path)
     # ponytail: resume is within-run only (num_retries per chunk). A run killed mid-upload
     # abandons the session, Drive creates no file, and the next run re-uploads it - correct,
     # just not byte-efficient. Persist resumable_uri across runs if that ever stings.
@@ -100,7 +106,17 @@ def upload_drive(svc, parent, path, relpath, size, on_progress=None):
         status, resp = req.next_chunk(num_retries=5)
         if status and on_progress:
             on_progress(status.resumable_progress, size)
-    return resp
+    return _verify(svc, resp, expect_md5, path)
+
+
+def _verify(svc, f, expect_md5, path):
+    got = f.get("md5Checksum")
+    if expect_md5 and got and got != expect_md5:
+        accounts.retry(lambda: svc.files().update(
+            fileId=f["id"], body={"trashed": True}).execute())
+        raise ValueError(f"{path.name}: Drive stored different bytes "
+                         f"(expected md5 {expect_md5}, got {got}); upload discarded")
+    return f
 
 
 def push_photos(creds, path, mime="application/octet-stream"):
