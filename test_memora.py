@@ -167,11 +167,24 @@ def test_repo_carries_no_credentials():
     contain a client id, client secret, refresh token or account name."""
     import re
     root = Path(__file__).parent
-    bad = re.compile(r"apps\.googleusercontent\.com|\"client_secret\"|refresh_token\"\s*:"
-                     r"|BEGIN [A-Z ]*PRIVATE KEY|AIza[0-9A-Za-z_-]{30}")
-    tracked = [f for f in root.rglob("*")
-               if f.is_file() and "__pycache__" not in f.parts and ".git" not in f.parts]
-    assert tracked, "no files found"
+    # assembled from fragments so this file does not match its own patterns
+    bad = re.compile("|".join([
+        r"apps\." + r"googleusercontent\.com",
+        '"client' + '_secret"',
+        "refresh" + r'_token"\s*:',
+        "BEGIN [A-Z ]*PRIVATE KEY",
+        "AIza[0-9A-Za-z_-]{30}",
+    ]))
+    # only what git would publish: a virtualenv full of library source is not our tree,
+    # and google_auth_oauthlib's own flow.py legitimately contains the key name we scan
+    # for (which is also why the patterns above are assembled from fragments).
+    listed = subprocess.run(["git", "ls-files", "-z"], cwd=root,
+                            capture_output=True, text=True)
+    tracked = [root / n for n in listed.stdout.split("\0") if n] if listed.returncode == 0 \
+        else [f for f in root.rglob("*") if f.is_file()
+              and not {"__pycache__", ".git", ".venv", "venv"} & set(f.parts)]
+    tracked = [f for f in tracked if f.is_file()]
+    assert len(tracked) > 5, f"expected a populated tree, got {tracked}"
     for f in tracked:
         try:
             text = f.read_text()
